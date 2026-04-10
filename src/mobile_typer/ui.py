@@ -895,6 +895,21 @@ def _render_remote_guide() -> str:
           </div>
         </details>
         {manual_sections_html}
+        <section class="guide-manual-footer" aria-labelledby="guide-manual-title">
+          <h3 id="guide-manual-title" class="guide-manual-title">Original manual</h3>
+          <p class="guide-manual-note">
+            Open the full PDF manual in a new tab for the complete original reference.
+          </p>
+          <a
+            href="/manual.pdf"
+            target="_blank"
+            rel="noopener"
+            class="guide-manual-button"
+            aria-label="Open the full PDF manual in a new tab"
+          >
+            Open full PDF manual
+          </a>
+        </section>
       </div>
     </div>
   </aside>
@@ -2071,6 +2086,72 @@ def render_page(allowed_keys: tuple[str, ...], urls: list[str], backend_name: st
       max-width: none;
     }}
 
+    .guide-manual-footer {{
+      display: grid;
+      gap: 0.72rem;
+      padding: 1rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 240, 198, 0.14);
+      background:
+        radial-gradient(circle at top left, rgba(255, 196, 87, 0.09), transparent 12rem),
+        linear-gradient(180deg, rgba(18, 24, 37, 0.98), rgba(9, 12, 20, 0.98));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 10px 24px rgba(0, 0, 0, 0.18);
+    }}
+
+    .guide-manual-title {{
+      margin: 0;
+      color: #fff7eb;
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.25;
+    }}
+
+    .guide-manual-note {{
+      margin: 0;
+      color: rgba(245, 239, 224, 0.88);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }}
+
+    .guide-manual-button {{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 3.2rem;
+      padding: 0.92rem 1.1rem;
+      border: 1px solid rgba(255, 236, 184, 0.18);
+      border-radius: 999px;
+      background:
+        linear-gradient(180deg, rgba(255, 199, 90, 0.26), rgba(163, 104, 27, 0.22)),
+        linear-gradient(180deg, rgba(39, 45, 60, 0.96), rgba(15, 19, 29, 0.98));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 12px 28px rgba(0, 0, 0, 0.22);
+      color: #fff8ea;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      touch-action: manipulation;
+    }}
+
+    .guide-manual-button:hover,
+    .guide-manual-button:focus-visible {{
+      border-color: rgba(255, 244, 211, 0.36);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 14px 30px rgba(0, 0, 0, 0.24);
+    }}
+
+    .guide-manual-button:focus-visible {{
+      outline: 2px solid rgba(255, 241, 196, 0.82);
+      outline-offset: 2px;
+    }}
+
     .guide-button-cluster {{
       display: flex;
       flex-wrap: wrap;
@@ -2349,6 +2430,10 @@ def render_page(allowed_keys: tuple[str, ...], urls: list[str], backend_name: st
       }}
 
       .guide-example {{
+        padding: 0.82rem;
+      }}
+
+      .guide-manual-footer {{
         padding: 0.82rem;
       }}
 

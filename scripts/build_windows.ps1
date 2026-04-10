@@ -75,6 +75,7 @@ function Build-Executable {
         --onefile `
         --windowed `
         --add-data "icons;icons" `
+        --add-data "manual.pdf;." `
         --version-file $versionFile `
         --hidden-import qrcode `
         --hidden-import tkinter `

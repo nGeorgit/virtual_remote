@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import urlparse
 
 from .constants import ALLOWED_KEYS, EMERGENCY_STOP_KEY, LOGGER
@@ -41,6 +43,25 @@ class PressRequest:
 
 def _allowed_keys_error(allowed_keys: tuple[str, ...]) -> str:
     return f"Only these keys are allowed: {', '.join(allowed_keys)}."
+
+
+def _iter_manual_pdf_paths() -> tuple[Path, ...]:
+    candidates: list[Path] = []
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(Path(meipass) / "manual.pdf")
+
+    candidates.append(Path(__file__).resolve().parents[2] / "manual.pdf")
+    candidates.append(Path(sys.executable).resolve().parent / "manual.pdf")
+    return tuple(candidates)
+
+
+def _find_manual_pdf() -> Path | None:
+    for candidate in _iter_manual_pdf_paths():
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 def _parse_press_request(
@@ -107,6 +128,34 @@ class MobileTyperHandler(BaseHTTPRequestHandler):
                 HTTPStatus.OK,
                 page.encode("utf-8"),
                 content_type="text/html; charset=utf-8",
+            )
+            return
+
+        if parsed.path == "/manual.pdf":
+            manual_path = _find_manual_pdf()
+            if manual_path is None:
+                self._send_response(
+                    HTTPStatus.NOT_FOUND,
+                    b"Manual PDF not found.",
+                    content_type="text/plain; charset=utf-8",
+                )
+                return
+
+            try:
+                body = manual_path.read_bytes()
+            except OSError:
+                self._send_response(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    b"Could not read manual PDF.",
+                    content_type="text/plain; charset=utf-8",
+                )
+                return
+
+            self._send_response(
+                HTTPStatus.OK,
+                body,
+                content_type="application/pdf",
+                headers={"Content-Disposition": 'inline; filename="manual.pdf"'},
             )
             return
 
@@ -232,11 +281,15 @@ class MobileTyperHandler(BaseHTTPRequestHandler):
         body: bytes,
         *,
         content_type: str,
+        headers: dict[str, str] | None = None,
     ) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        if headers:
+            for name, value in headers.items():
+                self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 

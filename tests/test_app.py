@@ -7,6 +7,7 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
+from pathlib import Path
 from unittest import mock
 
 from mobile_typer.app import (
@@ -80,6 +81,33 @@ class MobileTyperServerTests(unittest.TestCase):
         with urllib.request.urlopen(request, timeout=2) as response:
             return response.status, response.read().decode("utf-8")
 
+    def request_raw(
+        self,
+        path: str,
+        *,
+        method: str = "GET",
+        payload: dict[str, object] | None = None,
+    ) -> tuple[int, bytes, str, str | None]:
+        data = None
+        headers: dict[str, str] = {}
+        if payload is not None:
+            data = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+
+        request = urllib.request.Request(
+            f"{self.base_url}{path}",
+            method=method,
+            data=data,
+            headers=headers,
+        )
+        with urllib.request.urlopen(request, timeout=2) as response:
+            return (
+                response.status,
+                response.read(),
+                response.headers.get_content_type(),
+                response.headers.get("Content-Disposition"),
+            )
+
     def request_error(
         self,
         path: str,
@@ -117,6 +145,17 @@ class MobileTyperServerTests(unittest.TestCase):
         payload = json.loads(body)
         self.assertEqual(payload["backend"], "fake")
         self.assertEqual(payload["allowed_keys"], EXPECTED_ALLOWED_KEYS)
+
+    def test_manual_pdf_endpoint_serves_manual(self) -> None:
+        status, body, content_type, content_disposition = self.request_raw("/manual.pdf")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(content_type, "application/pdf")
+        self.assertEqual(content_disposition, 'inline; filename="manual.pdf"')
+        self.assertEqual(
+            body,
+            (Path(__file__).resolve().parents[1] / "manual.pdf").read_bytes(),
+        )
 
     def test_press_endpoint_sends_allowed_key(self) -> None:
         status, body = self.request("/api/press", method="POST", payload={"key": "A"})
@@ -404,6 +443,12 @@ class MobileTyperQrTests(unittest.TestCase):
         self.assertIn("Frequency of resonance", page)
         self.assertIn("Graphic printout", page)
         self.assertIn("Erase complete memory", page)
+        self.assertIn('href="/manual.pdf"', page)
+        self.assertIn('target="_blank"', page)
+        self.assertIn("guide-manual-footer", page)
+        self.assertIn("guide-manual-button", page)
+        self.assertIn("guide-manual-title", page)
+        self.assertIn("Open full PDF manual", page)
         self.assertNotIn('<details class="guide-section" open>', page)
         self.assertIn("guide-summary", page)
         self.assertIn("guide-section-body", page)
