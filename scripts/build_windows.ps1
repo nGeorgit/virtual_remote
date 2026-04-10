@@ -4,8 +4,8 @@ Set-StrictMode -Version Latest
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $repoRoot
 
-$pythonVersion = "3.11"
-$pyInstallerVersion = "6.19.0"
+$pythonVersion = "3.8"
+$pyInstallerVersion = "4.7"
 $distPath = Join-Path $repoRoot "dist\mobile-typer.exe"
 $versionFile = Join-Path $repoRoot "packaging\windows_version_info.txt"
 $installScriptPath = Join-Path $repoRoot "scripts\install_mobile_typer.ps1"

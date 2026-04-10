@@ -1,7 +1,7 @@
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.8"
 # dependencies = [
-#   "qrcode>=7.4",
+#   "qrcode>=7.4,<8",
 # ]
 # ///
 

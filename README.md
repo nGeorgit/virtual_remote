@@ -10,7 +10,7 @@ When you tap a button from your phone, the page now waits briefly before sending
 ## Requirements
 
 - `uv`
-- Python 3.11+
+- Python 3.8+
 - Your phone and computer must be on the same Wi-Fi network
 - Keep the target app focused on your computer
 
@@ -19,6 +19,12 @@ When you tap a button from your phone, the page now waits briefly before sending
 - Linux: this implementation uses X11/XTest. It is intended for X11 sessions.
 - macOS: uses `osascript` and requires accessibility permissions for terminal/apps that send input.
 - Windows: uses the native Win32 keyboard event API.
+
+### Windows 7 branch note
+
+The `win7-spike` branch lowers the runtime and build baseline so the app can be tested on Windows 7 SP1. It is a legacy-compatibility branch, not the preferred branch for Windows 10 or 11.
+
+If you do not have a physical Windows 7 machine, the branch includes a Linux-side QEMU workflow in [docs/win7_vm.md](docs/win7_vm.md).
 
 ## Run
 
@@ -92,6 +98,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
 
 The build script checks for everything it needs. If `uv` is missing, it downloads a local copy into the repository. If a supported Python is missing, it installs it through `uv`. Then it runs the PyInstaller build. You do not need to preinstall `uv` on the Windows build machine.
 
+For the `win7-spike` branch, the intended target is Windows 7 SP1. The client machine may also need the `KB2533623` update before the bundled Python runtime can start.
+
 That produces:
 
 ```text
@@ -115,7 +123,7 @@ You can give the client the files from `dist\`.
 - `install_mobile_typer.bat`: a simple installer launcher
 - `install_mobile_typer.ps1`: the installer logic
 
-The installer copies the app into `%LocalAppData%\MobileTyper`, creates Start Menu and Desktop shortcuts, can enable auto-start on login, and can add a Windows Firewall rule when run as Administrator.
+The installer copies the app into `%LocalAppData%\MobileTyper`, creates Start Menu and Desktop shortcuts, can enable auto-start on login, and can add a Windows Firewall rule when run as Administrator. On older Windows versions where the NetSecurity PowerShell cmdlets are missing, it falls back to `netsh advfirewall`.
 
 ### Optional code signing prep
 

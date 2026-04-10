@@ -3,9 +3,9 @@ name = "mobile-typer"
 version = "0.1.0"
 description = "Serve a phone-friendly local webpage that sends keypresses to the host computer."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.8"
 dependencies = [
-    "qrcode>=7.4",
+    "qrcode>=7.4,<8",
 ]
 
 [project.scripts]

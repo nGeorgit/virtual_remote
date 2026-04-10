@@ -85,13 +85,35 @@ function Set-FirewallRule {
     }
 
     Write-Step "Adding or updating the Windows Firewall rule"
-    Get-NetFirewallRule -DisplayName $firewallRuleName -ErrorAction SilentlyContinue | Remove-NetFirewallRule | Out-Null
-    New-NetFirewallRule `
-        -DisplayName $firewallRuleName `
-        -Direction Inbound `
-        -Action Allow `
-        -Program $ExecutablePath `
-        -Profile Private | Out-Null
+
+    $getFirewallRuleCommand = Get-Command -Name Get-NetFirewallRule -ErrorAction SilentlyContinue
+    $newFirewallRuleCommand = Get-Command -Name New-NetFirewallRule -ErrorAction SilentlyContinue
+    $removeFirewallRuleCommand = Get-Command -Name Remove-NetFirewallRule -ErrorAction SilentlyContinue
+
+    if ($getFirewallRuleCommand -and $newFirewallRuleCommand -and $removeFirewallRuleCommand) {
+        Get-NetFirewallRule -DisplayName $firewallRuleName -ErrorAction SilentlyContinue | Remove-NetFirewallRule | Out-Null
+        New-NetFirewallRule `
+            -DisplayName $firewallRuleName `
+            -Direction Inbound `
+            -Action Allow `
+            -Program $ExecutablePath `
+            -Profile Private | Out-Null
+        return
+    }
+
+    Write-Host "  [INFO] NetSecurity cmdlets are unavailable. Falling back to netsh advfirewall." -ForegroundColor Cyan
+    & netsh advfirewall firewall delete rule "name=$firewallRuleName" "program=$ExecutablePath" | Out-Null
+    & netsh advfirewall firewall add rule `
+        "name=$firewallRuleName" `
+        dir=in `
+        action=allow `
+        "program=$ExecutablePath" `
+        profile=private `
+        enable=yes | Out-Null
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "netsh could not create the Windows Firewall rule."
+    }
 }
 
 if (-not (Test-Path $SourceExe)) {

@@ -14,7 +14,7 @@ from .network import discover_urls, fallback_ports, is_port_in_use_error
 from .ui import render_page
 
 
-@dataclass(slots=True)
+@dataclass
 class AppState:
     key_sender: KeySender
     allowed_keys: tuple[str, ...] = ALLOWED_KEYS
@@ -26,7 +26,7 @@ class AppState:
     port_notice: str | None = None
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class PressRequest:
     key: str | None = None
     keys: tuple[str, ...] = ()
