@@ -42,6 +42,7 @@ from .server import (
     refresh_server_urls,
 )
 from .ui import (
+    GuiLogHandler,
     MobileTyperWindow,
     build_qr_matrix,
     get_windows_autostart_command,
@@ -100,6 +101,18 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.INFO if args.verbose else logging.WARNING,
         format="[%(levelname)s] %(message)s",
     )
+    root_handler_level = logging.INFO if args.verbose else logging.WARNING
+    for handler in logging.getLogger().handlers:
+        handler.setLevel(root_handler_level)
+
+    gui_log_handler: GuiLogHandler | None = None
+    if not args.no_gui:
+        LOGGER.setLevel(logging.INFO)
+        gui_log_handler = GuiLogHandler()
+        gui_log_handler.setFormatter(
+            logging.Formatter("[%(levelname)s] %(message)s")
+        )
+        LOGGER.addHandler(gui_log_handler)
 
     try:
         key_sender = select_key_sender(dry_run=args.dry_run)
@@ -127,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
             print_banner(server)
             server_thread.join()
         else:
-            app_window = MobileTyperWindow(server)
+            app_window = MobileTyperWindow(server, log_handler=gui_log_handler)
             if is_stdout_console_available():
                 print_banner(server)
             app_window.run()
@@ -143,6 +156,8 @@ def main(argv: list[str] | None = None) -> int:
         server.server_close()
         key_sender.close()
         server_thread.join(timeout=2)
+        if gui_log_handler is not None:
+            LOGGER.removeHandler(gui_log_handler)
 
     return 0
 

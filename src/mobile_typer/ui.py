@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import ctypes
 import html
+import logging
 import platform
 import subprocess
 import sys
+from collections import deque
 from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -24,6 +26,42 @@ from .key_sender import UnsupportedPlatformError
 
 if TYPE_CHECKING:
     from .server import MobileTyperHTTPServer
+
+
+DESKTOP_APP_TITLE = "Mobile Remote"
+
+
+class GuiLogHandler(logging.Handler):
+    def __init__(self, *, max_records: int = 250) -> None:
+        super().__init__(level=logging.INFO)
+        self._records: deque[str] = deque(maxlen=max_records)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            message = self.format(record)
+        except Exception:
+            self.handleError(record)
+            return
+
+        self.acquire()
+        try:
+            self._records.append(message)
+        finally:
+            self.release()
+
+    def snapshot(self) -> tuple[str, ...]:
+        self.acquire()
+        try:
+            return tuple(self._records)
+        finally:
+            self.release()
+
+    def clear(self) -> None:
+        self.acquire()
+        try:
+            self._records.clear()
+        finally:
+            self.release()
 
 
 def render_terminal_qr(data: str) -> str | None:
@@ -55,7 +93,7 @@ def is_stdout_console_available() -> bool:
     return bool(getattr(sys.stdout, "isatty", lambda: False)())
 
 
-def show_error_dialog(message: str, *, title: str = "Mobile Typer") -> None:
+def show_error_dialog(message: str, *, title: str = DESKTOP_APP_TITLE) -> None:
     try:
         import tkinter as tk
         from tkinter import messagebox
@@ -2952,16 +2990,22 @@ def render_page(allowed_keys: tuple[str, ...], urls: list[str], backend_name: st
 
 
 class MobileTyperWindow:
-    def __init__(self, server: MobileTyperHTTPServer) -> None:
+    def __init__(
+        self,
+        server: MobileTyperHTTPServer,
+        *,
+        log_handler: GuiLogHandler | None = None,
+    ) -> None:
         import tkinter as tk
 
         self._tk = tk
         self._server = server
+        self._log_handler = log_handler
         self._root = tk.Tk()
-        self._root.title("Mobile Typer")
+        self._root.title(DESKTOP_APP_TITLE)
         self._root.configure(bg=WINDOW_BG)
         self._root.protocol("WM_DELETE_WINDOW", self._handle_close)
-        self._root.minsize(430, 720)
+        self._root.minsize(430, 860)
 
         self._primary_url = server.state.urls[0] if server.state.urls else "http://localhost"
         self._status_var: object | None = None
@@ -2970,7 +3014,11 @@ class MobileTyperWindow:
         self._qr_canvas: object | None = None
         self._urls_frame: object | None = None
         self._autostart_var: object | None = None
+        self._log_text: object | None = None
+        self._log_refresh_job: object | None = None
+        self._last_log_snapshot: tuple[str, ...] = ()
         self._build_ui()
+        self._schedule_log_refresh()
 
     def run(self) -> None:
         self._root.mainloop()
@@ -2994,7 +3042,7 @@ class MobileTyperWindow:
 
         title = tk.Label(
             panel,
-            text="Mobile Typer",
+            text=DESKTOP_APP_TITLE,
             font=("Segoe UI", 22, "bold"),
             bg=PANEL_BG,
             fg=TEXT_COLOR,
@@ -3168,7 +3216,7 @@ class MobileTyperWindow:
 
         firewall_note = tk.Label(
             panel,
-            text="If your phone cannot connect, keep both devices on the same Wi-Fi and allow Mobile Typer through Windows Firewall.",
+            text="If your phone cannot connect, keep both devices on the same Wi-Fi and allow the app through Windows Firewall.",
             font=("Segoe UI", 9),
             bg=PANEL_BG,
             fg=MUTED_TEXT,
@@ -3176,6 +3224,86 @@ class MobileTyperWindow:
             wraplength=360,
         )
         firewall_note.pack(anchor="w", pady=(14, 0))
+
+        if self._log_handler is not None:
+            log_header = tk.Frame(panel, bg=PANEL_BG)
+            log_header.pack(fill="x", pady=(14, 0))
+
+            log_title = tk.Label(
+                log_header,
+                text="Backend log",
+                font=("Segoe UI", 9, "bold"),
+                bg=PANEL_BG,
+                fg=TEXT_COLOR,
+            )
+            log_title.pack(side="left")
+
+            clear_logs_button = tk.Button(
+                log_header,
+                text="Clear",
+                font=("Segoe UI", 9),
+                bg="#e2e8f0",
+                fg=TEXT_COLOR,
+                activebackground="#cbd5e1",
+                activeforeground=TEXT_COLOR,
+                relief="flat",
+                padx=10,
+                pady=6,
+                command=self._clear_logs,
+            )
+            clear_logs_button.pack(side="right")
+
+            copy_logs_button = tk.Button(
+                log_header,
+                text="Copy Logs",
+                font=("Segoe UI", 9, "bold"),
+                bg="#dbeafe",
+                fg=TEXT_COLOR,
+                activebackground="#bfdbfe",
+                activeforeground=TEXT_COLOR,
+                relief="flat",
+                padx=10,
+                pady=6,
+                command=self._copy_logs,
+            )
+            copy_logs_button.pack(side="right", padx=(0, 8))
+
+            log_note = tk.Label(
+                panel,
+                text="Recent send activity and backend errors appear here.",
+                font=("Segoe UI", 9),
+                bg=PANEL_BG,
+                fg=MUTED_TEXT,
+                justify="left",
+                wraplength=360,
+            )
+            log_note.pack(anchor="w", pady=(6, 0))
+
+            log_frame = tk.Frame(panel, bg="#0f172a")
+            log_frame.pack(fill="both", expand=True, pady=(6, 0))
+
+            log_scrollbar = tk.Scrollbar(log_frame)
+            log_scrollbar.pack(side="right", fill="y")
+
+            log_text = tk.Text(
+                log_frame,
+                height=10,
+                font=("Consolas", 9),
+                bg="#0f172a",
+                fg="#e2e8f0",
+                insertbackground="#e2e8f0",
+                relief="flat",
+                bd=0,
+                wrap="word",
+                yscrollcommand=log_scrollbar.set,
+                padx=10,
+                pady=10,
+            )
+            log_text.pack(fill="both", expand=True)
+            log_scrollbar.configure(command=log_text.yview)
+            log_text.configure(state="disabled")
+            self._log_text = log_text
+            self._refresh_log_view(force=True)
 
     def _render_url_labels(self) -> None:
         if self._urls_frame is None:
@@ -3234,6 +3362,26 @@ class MobileTyperWindow:
         if self._status_var is not None:
             self._status_var.set("Primary URL copied to the clipboard.")
 
+    def _copy_logs(self) -> None:
+        if self._log_handler is None:
+            return
+
+        log_text = "\n".join(self._log_handler.snapshot()) or "No backend logs yet."
+        self._root.clipboard_clear()
+        self._root.clipboard_append(log_text)
+        self._root.update_idletasks()
+        if self._status_var is not None:
+            self._status_var.set("Backend log copied to the clipboard.")
+
+    def _clear_logs(self) -> None:
+        if self._log_handler is None:
+            return
+
+        self._log_handler.clear()
+        self._refresh_log_view(force=True)
+        if self._status_var is not None:
+            self._status_var.set("Backend log cleared.")
+
     def _refresh_network(self) -> None:
         from .server import refresh_server_urls
 
@@ -3251,6 +3399,30 @@ class MobileTyperWindow:
                 f"Network details refreshed. Current port: {self._server.state.actual_port}."
             )
 
+    def _schedule_log_refresh(self) -> None:
+        if self._log_handler is None:
+            return
+
+        self._refresh_log_view()
+        self._log_refresh_job = self._root.after(300, self._schedule_log_refresh)
+
+    def _refresh_log_view(self, *, force: bool = False) -> None:
+        if self._log_handler is None or self._log_text is None:
+            return
+
+        snapshot = self._log_handler.snapshot()
+        if not force and snapshot == self._last_log_snapshot:
+            return
+
+        self._last_log_snapshot = snapshot
+        body = "\n".join(snapshot) if snapshot else "Waiting for backend log output..."
+
+        self._log_text.configure(state="normal")
+        self._log_text.delete("1.0", "end")
+        self._log_text.insert("1.0", body)
+        self._log_text.configure(state="disabled")
+        self._log_text.see("end")
+
     def _toggle_autostart(self) -> None:
         if self._autostart_var is None:
             return
@@ -3266,18 +3438,24 @@ class MobileTyperWindow:
         if self._status_var is not None:
             if enabled:
                 self._status_var.set(
-                    "Mobile Typer will start automatically when you log in."
+                    "Mobile Remote will start automatically when you log in."
                 )
             else:
                 self._status_var.set("Start with Windows has been disabled.")
 
     def _handle_close(self) -> None:
+        if self._log_refresh_job is not None:
+            try:
+                self._root.after_cancel(self._log_refresh_job)
+            except Exception:
+                pass
+            self._log_refresh_job = None
         self._root.destroy()
 
 
 def print_banner(server: MobileTyperHTTPServer) -> None:
     print()
-    print("Mobile Typer is running.")
+    print(f"{DESKTOP_APP_TITLE} is running.")
     print(f"Backend: {server.state.key_sender.backend_name}")
 
     if server.state.urls:
@@ -3307,6 +3485,8 @@ def print_banner(server: MobileTyperHTTPServer) -> None:
 
 
 __all__ = [
+    "DESKTOP_APP_TITLE",
+    "GuiLogHandler",
     "render_terminal_qr",
     "build_qr_matrix",
     "is_stdout_console_available",

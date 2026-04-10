@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 import socket
 import threading
 import unittest
@@ -21,6 +22,7 @@ from mobile_typer.app import (
     render_page,
     render_terminal_qr,
 )
+from mobile_typer.ui import GuiLogHandler
 
 EXPECTED_ALLOWED_KEYS = [chr(code) for code in range(ord("a"), ord("r") + 1)]
 
@@ -528,6 +530,36 @@ class MobileTyperQrTests(unittest.TestCase):
         self.assertEqual(page.count('data-key="'), len(EXPECTED_ALLOWED_KEYS))
         for key in EXPECTED_ALLOWED_KEYS:
             self.assertIn(f'data-key="{key}"', page)
+
+
+class GuiLogHandlerTests(unittest.TestCase):
+    def test_snapshot_and_clear(self) -> None:
+        handler = GuiLogHandler(max_records=2)
+        handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+
+        logger = logging.getLogger("tests.gui_log_handler")
+        previous_handlers = list(logger.handlers)
+        previous_level = logger.level
+        previous_propagate = logger.propagate
+        logger.handlers = [handler]
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+        try:
+            logger.info("first")
+            logger.error("second")
+            logger.warning("third")
+        finally:
+            logger.handlers = previous_handlers
+            logger.setLevel(previous_level)
+            logger.propagate = previous_propagate
+
+        self.assertEqual(
+            handler.snapshot(),
+            ("[ERROR] second", "[WARNING] third"),
+        )
+
+        handler.clear()
+        self.assertEqual(handler.snapshot(), ())
 
 
 if __name__ == "__main__":

@@ -283,6 +283,16 @@ class WindowsKeySender:
         self._user32.MapVirtualKeyW.restype = ctypes.c_uint
         self._user32.VkKeyScanW.argtypes = [ctypes.c_wchar]
         self._user32.VkKeyScanW.restype = ctypes.c_short
+        self._user32.GetForegroundWindow.argtypes = []
+        self._user32.GetForegroundWindow.restype = ctypes.c_void_p
+        self._user32.GetWindowTextLengthW.argtypes = [ctypes.c_void_p]
+        self._user32.GetWindowTextLengthW.restype = ctypes.c_int
+        self._user32.GetWindowTextW.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_wchar_p,
+            ctypes.c_int,
+        ]
+        self._user32.GetWindowTextW.restype = ctypes.c_int
 
     def _resolve_virtual_key(self, key: str) -> int:
         virtual_key = int(self._user32.VkKeyScanW(key))
@@ -305,6 +315,25 @@ class WindowsKeySender:
             ),
         )
 
+    def _describe_foreground_window(self) -> str | None:
+        handle = self._user32.GetForegroundWindow()
+        if not handle:
+            return None
+
+        handle_value = int(handle)
+        title_length = int(self._user32.GetWindowTextLengthW(handle))
+        if title_length <= 0:
+            return f"handle 0x{handle_value:X}"
+
+        title_buffer = ctypes.create_unicode_buffer(title_length + 1)
+        copied = int(
+            self._user32.GetWindowTextW(handle, title_buffer, len(title_buffer))
+        )
+        if copied <= 0:
+            return f"handle 0x{handle_value:X}"
+
+        return f"{title_buffer.value!r} (handle 0x{handle_value:X})"
+
     def _send_inputs(self, *inputs: WindowsSendInput) -> None:
         sequence = (WindowsSendInput * len(inputs))(*inputs)
         sent = self._user32.SendInput(
@@ -314,7 +343,16 @@ class WindowsKeySender:
         )
         if sent != len(inputs):
             error = ctypes.get_last_error()
-            raise KeypressError(f"SendInput failed with error code {error}.")
+            message_parts = [f"SendInput failed with error code {error}."]
+            foreground_window = self._describe_foreground_window()
+            if foreground_window:
+                message_parts.append(f"Foreground window: {foreground_window}.")
+            if error in {0, 5}:
+                message_parts.append(
+                    "Windows often returns this when the target app is running as "
+                    "Administrator or otherwise blocking injected input."
+                )
+            raise KeypressError(" ".join(message_parts))
 
     def press(self, key: str) -> None:
         self.press_combo((key,))

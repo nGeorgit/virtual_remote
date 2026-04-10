@@ -14,12 +14,12 @@ VSVersionInfo(
       StringTable(
         "040904B0",
         [
-          StringStruct("CompanyName", "Mobile Typer"),
-          StringStruct("FileDescription", "Local phone keyboard bridge for desktop apps"),
+          StringStruct("CompanyName", "Mobile Remote"),
+          StringStruct("FileDescription", "Mobile Remote desktop controller"),
           StringStruct("FileVersion", "0.1.0"),
           StringStruct("InternalName", "mobile-typer"),
           StringStruct("OriginalFilename", "mobile-typer.exe"),
-          StringStruct("ProductName", "Mobile Typer"),
+          StringStruct("ProductName", "Mobile Remote"),
           StringStruct("ProductVersion", "0.1.0")
         ]
       )

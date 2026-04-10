@@ -16,15 +16,15 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $installDir = Join-Path $env:LOCALAPPDATA "MobileTyper"
 $installExe = Join-Path $installDir "mobile-typer.exe"
 $startMenuDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
-$startMenuShortcut = Join-Path $startMenuDir "Mobile Typer.lnk"
+$startMenuShortcut = Join-Path $startMenuDir "Mobile Remote.lnk"
 
 # Native COM approach for Desktop path (Safer for localized Windows)
 $comShell = New-Object -ComObject WScript.Shell
 $safeDesktopPath = $comShell.SpecialFolders.Item("Desktop")
-$desktopShortcut = Join-Path $safeDesktopPath "Mobile Typer.lnk"
+$desktopShortcut = Join-Path $safeDesktopPath "Mobile Remote.lnk"
 
 $runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-$firewallRuleName = "Mobile Typer"
+$firewallRuleName = "Mobile Remote"
 
 function Write-Step {
     param([string]$Message)
@@ -98,7 +98,7 @@ if (-not (Test-Path $SourceExe)) {
     throw "Could not find mobile-typer.exe at $SourceExe"
 }
 
-Write-Step "Installing Mobile Typer"
+Write-Step "Installing Mobile Remote"
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 Copy-Item -Path $SourceExe -Destination $installExe -Force
 
@@ -110,7 +110,7 @@ try {
         -ShortcutPath $startMenuShortcut `
         -TargetPath $installExe `
         -WorkingDirectory $installDir `
-        -Description "Mobile Typer"
+        -Description "Mobile Remote"
     Write-Host "  [OK] Start Menu shortcut created." -ForegroundColor Green
 } catch {
     Write-Host "  [WARN] Failed to create Start Menu shortcut." -ForegroundColor Yellow
@@ -123,7 +123,7 @@ if (-not $SkipDesktopShortcut) {
             -ShortcutPath $desktopShortcut `
             -TargetPath $installExe `
             -WorkingDirectory $installDir `
-            -Description "Mobile Typer"
+            -Description "Mobile Remote"
         Write-Host "  [OK] Desktop shortcut created." -ForegroundColor Green
     } catch {
         Write-Host "  [WARN] Windows blocked the Desktop shortcut due to Greek/OneDrive folder encoding." -ForegroundColor Yellow
@@ -138,6 +138,6 @@ Write-Step "Install complete"
 Write-Host "Executable is located at: $installExe" -ForegroundColor Green
 
 if ($LaunchAfterInstall) {
-    Write-Step "Launching Mobile Typer..."
+    Write-Step "Launching Mobile Remote..."
     Start-Process -FilePath $installExe -WorkingDirectory $installDir
 }
