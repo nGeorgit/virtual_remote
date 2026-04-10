@@ -13,24 +13,53 @@ from typing import Protocol
 from .constants import LOGGER
 
 
+WindowsWord = ctypes.c_uint16
+WindowsDword = ctypes.c_uint32
+WindowsLong = ctypes.c_int32
+WindowsUlongPtr = ctypes.c_size_t
+
+
 class WindowsSendInputKeyboard(ctypes.Structure):
     _fields_ = [
-        ("wVk", ctypes.c_ushort),
-        ("wScan", ctypes.c_ushort),
-        ("dwFlags", ctypes.c_ulong),
-        ("time", ctypes.c_ulong),
-        ("dwExtraInfo", ctypes.c_void_p),
+        ("wVk", WindowsWord),
+        ("wScan", WindowsWord),
+        ("dwFlags", WindowsDword),
+        ("time", WindowsDword),
+        ("dwExtraInfo", WindowsUlongPtr),
+    ]
+
+
+class WindowsSendInputMouse(ctypes.Structure):
+    _fields_ = [
+        ("dx", WindowsLong),
+        ("dy", WindowsLong),
+        ("mouseData", WindowsDword),
+        ("dwFlags", WindowsDword),
+        ("time", WindowsDword),
+        ("dwExtraInfo", WindowsUlongPtr),
+    ]
+
+
+class WindowsSendInputHardware(ctypes.Structure):
+    _fields_ = [
+        ("uMsg", WindowsDword),
+        ("wParamL", WindowsWord),
+        ("wParamH", WindowsWord),
     ]
 
 
 class WindowsSendInputUnion(ctypes.Union):
-    _fields_ = [("ki", WindowsSendInputKeyboard)]
+    _fields_ = [
+        ("mi", WindowsSendInputMouse),
+        ("ki", WindowsSendInputKeyboard),
+        ("hi", WindowsSendInputHardware),
+    ]
 
 
 class WindowsSendInput(ctypes.Structure):
     _anonymous_ = ("union",)
     _fields_ = [
-        ("type", ctypes.c_ulong),
+        ("type", WindowsDword),
         ("union", WindowsSendInputUnion),
     ]
 
@@ -311,7 +340,7 @@ class WindowsKeySender:
                 wScan=scan_code,
                 dwFlags=flags,
                 time=0,
-                dwExtraInfo=None,
+                dwExtraInfo=0,
             ),
         )
 

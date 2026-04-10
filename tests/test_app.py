@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import importlib.util
 import json
 import logging
@@ -21,6 +22,13 @@ from mobile_typer.app import (
     parse_args,
     render_page,
     render_terminal_qr,
+)
+from mobile_typer.key_sender import (
+    WindowsSendInput,
+    WindowsSendInputHardware,
+    WindowsSendInputKeyboard,
+    WindowsSendInputMouse,
+    WindowsSendInputUnion,
 )
 from mobile_typer.ui import GuiLogHandler
 
@@ -560,6 +568,21 @@ class GuiLogHandlerTests(unittest.TestCase):
 
         handler.clear()
         self.assertEqual(handler.snapshot(), ())
+
+
+class WindowsStructureTests(unittest.TestCase):
+    def test_send_input_union_matches_windows_layout(self) -> None:
+        self.assertEqual(
+            ctypes.sizeof(WindowsSendInputUnion),
+            max(
+                ctypes.sizeof(WindowsSendInputMouse),
+                ctypes.sizeof(WindowsSendInputKeyboard),
+                ctypes.sizeof(WindowsSendInputHardware),
+            ),
+        )
+
+        expected_size = 40 if ctypes.sizeof(ctypes.c_void_p) == 8 else 28
+        self.assertEqual(ctypes.sizeof(WindowsSendInput), expected_size)
 
 
 if __name__ == "__main__":
