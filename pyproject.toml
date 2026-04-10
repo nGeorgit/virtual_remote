@@ -1,0 +1,19 @@
+[project]
+name = "mobile-typer"
+version = "0.1.0"
+description = "Serve a phone-friendly local webpage that sends keypresses to the host computer."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "qrcode>=7.4",
+]
+
+[project.scripts]
+mobile-typer = "mobile_typer.app:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
