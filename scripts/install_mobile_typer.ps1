@@ -1,6 +1,3 @@
-$ErrorActionPreference = "Stop"
-Set-StrictMode -Version Latest
-
 param(
     [string]$SourceExe = (Join-Path $PSScriptRoot "mobile-typer.exe"),
     [switch]$AutoStart,
@@ -9,11 +6,23 @@ param(
     [switch]$LaunchAfterInstall
 )
 
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+# Keep encoding standard
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $installDir = Join-Path $env:LOCALAPPDATA "MobileTyper"
 $installExe = Join-Path $installDir "mobile-typer.exe"
 $startMenuDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
 $startMenuShortcut = Join-Path $startMenuDir "Mobile Typer.lnk"
-$desktopShortcut = Join-Path ([Environment]::GetFolderPath("Desktop")) "Mobile Typer.lnk"
+
+# Native COM approach for Desktop path (Safer for localized Windows)
+$comShell = New-Object -ComObject WScript.Shell
+$safeDesktopPath = $comShell.SpecialFolders.Item("Desktop")
+$desktopShortcut = Join-Path $safeDesktopPath "Mobile Typer.lnk"
+
 $runKeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 $firewallRuleName = "Mobile Typer"
 
@@ -94,27 +103,41 @@ New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 Copy-Item -Path $SourceExe -Destination $installExe -Force
 
 Write-Step "Creating shortcuts"
-New-Shortcut `
-    -ShortcutPath $startMenuShortcut `
-    -TargetPath $installExe `
-    -WorkingDirectory $installDir `
-    -Description "Mobile Typer"
 
-if (-not $SkipDesktopShortcut) {
+# 1. Start Menu Shortcut (Highly reliable)
+try {
     New-Shortcut `
-        -ShortcutPath $desktopShortcut `
+        -ShortcutPath $startMenuShortcut `
         -TargetPath $installExe `
         -WorkingDirectory $installDir `
         -Description "Mobile Typer"
+    Write-Host "  [OK] Start Menu shortcut created." -ForegroundColor Green
+} catch {
+    Write-Host "  [WARN] Failed to create Start Menu shortcut." -ForegroundColor Yellow
 }
 
-Set-AutoStart -ExecutablePath $installExe -Enabled $AutoStart.IsPresent
+# 2. Desktop Shortcut (Wrapped in a safety net)
+if (-not $SkipDesktopShortcut) {
+    try {
+        New-Shortcut `
+            -ShortcutPath $desktopShortcut `
+            -TargetPath $installExe `
+            -WorkingDirectory $installDir `
+            -Description "Mobile Typer"
+        Write-Host "  [OK] Desktop shortcut created." -ForegroundColor Green
+    } catch {
+        Write-Host "  [WARN] Windows blocked the Desktop shortcut due to Greek/OneDrive folder encoding." -ForegroundColor Yellow
+        Write-Host "  [INFO] The app is still installed successfully! Use the Start Menu to open it." -ForegroundColor Cyan
+    }
+}
+
+Set-AutoStart -ExecutablePath $installExe -Enabled ([bool]$AutoStart)
 Set-FirewallRule -ExecutablePath $installExe
 
 Write-Step "Install complete"
-Write-Host $installExe -ForegroundColor Green
+Write-Host "Executable is located at: $installExe" -ForegroundColor Green
 
 if ($LaunchAfterInstall) {
-    Write-Step "Launching Mobile Typer"
+    Write-Step "Launching Mobile Typer..."
     Start-Process -FilePath $installExe -WorkingDirectory $installDir
 }
