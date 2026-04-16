@@ -176,7 +176,7 @@ function Install-BuildRequirements {
     Write-Step "Installing pinned build requirements from the repo-local wheelhouse"
     & $PythonExe -m pip install --no-index --find-links (Join-Path $repoRoot "vendor\windows\wheels") --requirement $requirementsPath
     if ($LASTEXITCODE -ne 0) {
-        throw "Offline dependency installation failed. Populate vendor/windows/wheels with the exact wheels listed in vendor/windows/manifest.json."
+        throw "Offline dependency installation failed. Ensure the committed vendor/windows/wheels payload matches vendor/windows/manifest.json."
     }
 }
 

@@ -30,7 +30,7 @@ If you do not have a physical Windows 7 machine, use the VM workflow in [`docs/w
 
 ### Maintainer: prepare the installer
 
-1. Put the Windows build ingredients into [`vendor/windows/`](vendor/windows/). Think of this folder as the maintainer's private box of offline build ingredients: Python, wheels, and optional NSIS files. End users do not need to understand it or interact with it.
+1. Keep the checked-in Windows build toolchain under [`vendor/windows/`](vendor/windows/). It is repo-committed offline build material for maintainers, not something end users interact with directly.
 2. Build on a Windows 10 maintainer machine or inside a Windows 7 VM by running [`scripts/build_windows.ps1`](scripts/build_windows.ps1) or [`scripts/build_windows.bat`](scripts/build_windows.bat).
 3. If the optional NSIS toolchain is vendored, the build produces `dist/windows/mobile-typer-win7-setup.exe`.
 4. Deliver that installer to the Windows 7 user as the normal handoff artifact.
@@ -131,7 +131,7 @@ dist/windows/mobile-typer-win7-setup.exe
 ### Important Windows 7 notes
 
 - The build script does **not** download `uv`, Python, PyInstaller, NSIS, or any other tools.
-- [`vendor/windows/`](vendor/windows/) is maintainer-only build material. It is not part of the normal end-user install story.
+- [`vendor/windows/`](vendor/windows/) is repo-committed maintainer/build material. It is not part of the normal end-user install story.
 - The preferred end-user path is the NSIS installer `mobile-typer-win7-setup.exe`.
 - [`scripts/install_mobile_typer.bat`](scripts/install_mobile_typer.bat) and [`scripts/install_mobile_typer.ps1`](scripts/install_mobile_typer.ps1) remain in the repo as maintainer and fallback tools, not the normal instructions for end users.
 - Some Windows 7 machines still need update `KB2533623` before the bundled Python 3.8 runtime can load correctly.
@@ -142,7 +142,7 @@ The repository workflow no longer claims to publish a trusted Windows 7 binary. 
 
 ### Practical deployment summary
 
-1. A maintainer populates [`vendor/windows/`](vendor/windows/) exactly as described in [`vendor/windows/manifest.json`](vendor/windows/manifest.json) and [`vendor/windows/README.md`](vendor/windows/README.md).
+1. The repository carries the vendored Windows build toolchain under [`vendor/windows/`](vendor/windows/) as described in [`vendor/windows/manifest.json`](vendor/windows/manifest.json) and [`vendor/windows/README.md`](vendor/windows/README.md).
 2. The maintainer builds on Windows 10 or inside the Windows 7 VM workflow from [`docs/win7_vm.md`](docs/win7_vm.md).
 3. The maintainer delivers `dist/windows/mobile-typer-win7-setup.exe` as the normal installer for the Windows 7 user.
 4. The Windows 7 user runs that installer and then launches `Mobile Remote` from the created shortcut.

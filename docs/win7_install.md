@@ -120,7 +120,7 @@ Those features are still useful for maintainers, but they are not the primary Wi
 
 The workflow is intentionally split:
 
-- Maintainer side: prepare [`vendor/windows/`](../vendor/windows/), build on Windows 10 or in a Windows 7 VM, and produce the NSIS installer.
+- Maintainer side: keep the committed [`vendor/windows/`](../vendor/windows/) toolchain current, build on Windows 10 or in a Windows 7 VM, and produce the NSIS installer.
 - End-user side: run `mobile-typer-win7-setup.exe` and use the created shortcut.
 
 That keeps PowerShell and repo build details away from the normal Windows 7 user.

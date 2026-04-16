@@ -36,3 +36,7 @@ pip-wheel-metadata/
 .DS_Store
 Thumbs.db
 .vm/
+
+# The Windows build toolchain is intentionally committed under vendor/windows/.
+!vendor/windows/
+!vendor/windows/**

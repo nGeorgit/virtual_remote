@@ -5,14 +5,14 @@ This document is the authoritative maintainer workflow for producing Windows 7 a
 ## Short version
 
 - Build on a Windows 10 maintainer machine or inside a Windows 7 VM.
-- [`vendor/windows/`](../vendor/windows/) is only for the maintainer who prepares the build. It is just the offline ingredient box for the build machine.
+- [`vendor/windows/`](../vendor/windows/) is the repo-committed offline Windows build toolchain used by the authoritative builder.
 - The normal artifact you hand to an end user is `dist/windows/mobile-typer-win7-setup.exe`.
 - End users should not be told to browse `vendor/windows/` or manually run the PowerShell installer scripts in the normal path.
 
 ## Maintainer checklist
 
-1. Put the Windows build ingredients into [`vendor/windows/`](../vendor/windows/).
-2. Treat [`vendor/windows/`](../vendor/windows/) as maintainer-only material:
+1. Confirm that the repository checkout already contains the Windows build ingredients under [`vendor/windows/`](../vendor/windows/).
+2. Treat [`vendor/windows/`](../vendor/windows/) as repo-committed maintainer/build material:
    - `python/` holds the Windows Python 3.8 runtime used for the build
    - `wheels/` holds the offline Python packages used for the build
    - `nsis/` holds the optional NSIS toolchain used to make the final installer `.exe`
@@ -38,7 +38,7 @@ That is the blessed path. The fallback scripts are for maintainer recovery cases
 
 [`vendor/windows/`](../vendor/windows/) is not an end-user folder.
 
-It is simply the maintainer's local stash of Windows build ingredients that the repo expects to find in a fixed layout. Those files are used on the build machine so the build can run without downloading tools from the network.
+It is the checked-in offline Windows build toolchain that the repo expects to find in a fixed layout. Those files travel with the repository so the build machine can run without downloading tools from the network.
 
 End users do not need to copy it, understand it, or touch it.
 
@@ -58,7 +58,7 @@ The authoritative build inputs are laid out under [`vendor/windows/`](../vendor/
 - [`vendor/windows/wheels/`](../vendor/windows/wheels/)
 - [`vendor/windows/nsis/`](../vendor/windows/nsis/)
 
-Populate those directories with the exact binaries and wheels listed in the manifest. Do not change the layout after downstream documentation or automation starts depending on it.
+Commit the exact binaries and wheels listed in the manifest to those directories. When the toolchain changes, replace the files in place and update the manifest and hash list in the same commit.
 
 ## Why this flow replaced `uv`
 

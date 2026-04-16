@@ -72,8 +72,7 @@ Anything copied into `.vm/win7/share/` appears to the guest as an extra disk.
 
 Use that folder for maintainer work such as:
 
-- the repository checkout itself, if you want to build inside the VM
-- the vendored offline toolchain under [`vendor/windows/`](../vendor/windows/)
+- the repository checkout itself, including the committed vendored offline toolchain under [`vendor/windows/`](../vendor/windows/), if you want to build inside the VM
 - the full `dist/windows/` directory when you want to inspect the staged outputs
 - the final `mobile-typer-win7-setup.exe` when you want to verify the exact user installer
 - test notes and logs
@@ -82,7 +81,7 @@ Use that folder for maintainer work such as:
 
 For the strongest Windows 7 confidence:
 
-1. populate [`vendor/windows/`](../vendor/windows/) on the host
+1. make sure the host checkout already includes the committed [`vendor/windows/`](../vendor/windows/) toolchain
 2. copy the repository into the VM share
 3. build from inside the Windows 7 VM with [`scripts/build_windows.ps1`](../scripts/build_windows.ps1)
 4. confirm that the build produced `dist/windows/mobile-typer-win7-setup.exe`
@@ -96,7 +95,7 @@ If you already have a trusted Windows 10 machine, you can build there instead an
 
 That is also a supported maintainer flow:
 
-1. populate [`vendor/windows/`](../vendor/windows/)
+1. make sure the Windows 10 checkout already includes the committed [`vendor/windows/`](../vendor/windows/) toolchain
 2. build on Windows 10 with [`scripts/build_windows.ps1`](../scripts/build_windows.ps1)
 3. copy `mobile-typer-win7-setup.exe` into the VM
 4. run the installer in the VM to confirm the final user experience
