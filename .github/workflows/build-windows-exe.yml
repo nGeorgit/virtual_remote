@@ -1,22 +1,46 @@
-name: build-windows-exe
+name: validate-windows-build-scaffolding
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-windows-exe.yml"
+      - "README.md"
+      - "docs/win7_*.md"
+      - "packaging/**"
+      - "scripts/build_windows.*"
+      - "scripts/install_mobile_typer.*"
+      - "vendor/windows/**"
 
 jobs:
-  build:
+  validate:
     runs-on: windows-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Build executable
+      - name: Verify Windows 7 build scaffolding
         shell: powershell
-        run: .\scripts\build_windows.ps1
+        run: |
+          $required = @(
+            'packaging/mobile_typer.spec',
+            'packaging/mobile_typer_win7.nsi',
+            'packaging/windows-build-requirements.txt',
+            'vendor/windows/manifest.json',
+            'vendor/windows/SHA256SUMS.txt',
+            'docs/win7_build.md',
+            'docs/win7_install.md',
+            'docs/win7_vm.md',
+            'scripts/build_windows.ps1',
+            'scripts/install_mobile_typer.ps1'
+          )
 
-      - name: Upload executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-typer-windows-bundle
-          path: dist/
+          foreach ($path in $required) {
+            if (-not (Test-Path $path)) {
+              throw "Missing required Windows 7 scaffolding file: $path"
+            }
+          }
+
+          Write-Host 'Windows 7 scaffolding is present.'
+          Write-Host 'This workflow does not build or certify a trusted Windows 7 binary.'

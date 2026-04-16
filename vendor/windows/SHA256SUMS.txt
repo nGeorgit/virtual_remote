@@ -1,0 +1,9 @@
+TO_BE_FILLED *vendor/windows/python/python.exe
+TO_BE_FILLED *vendor/windows/wheels/altgraph-0.17.4-py2.py3-none-any.whl
+TO_BE_FILLED *vendor/windows/wheels/pefile-2023.2.7-py3-none-any.whl
+TO_BE_FILLED *vendor/windows/wheels/Pillow-10.4.0-cp38-cp38-win_amd64.whl
+TO_BE_FILLED *vendor/windows/wheels/pyinstaller-4.7-py3-none-win_amd64.whl
+TO_BE_FILLED *vendor/windows/wheels/pyinstaller_hooks_contrib-2021.4-py2.py3-none-any.whl
+TO_BE_FILLED *vendor/windows/wheels/pywin32_ctypes-0.2.3-py3-none-any.whl
+TO_BE_FILLED *vendor/windows/wheels/qrcode-7.4.2-py3-none-any.whl
+TO_BE_FILLED *vendor/windows/nsis/makensis.exe

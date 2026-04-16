@@ -1,8 +1,8 @@
 # Windows 7 VM Workflow
 
-This is the practical workflow for testing the `win7-spike` branch from Linux.
+This is the practical workflow for validating the `win7-spike` branch from Linux.
 
-## Host Setup
+## Host setup
 
 Install the minimum QEMU packages on the Linux host:
 
@@ -17,7 +17,7 @@ If you want hardware acceleration, add your user to the `kvm` group and log out/
 sudo usermod -aG kvm "$USER"
 ```
 
-## Guest Assets
+## Guest assets
 
 You must provide your own Windows 7 SP1 ISO and license.
 
@@ -32,7 +32,7 @@ That creates:
 - `.vm/win7/win7.qcow2`
 - `.vm/win7/share/`
 
-## First Boot / Install
+## First boot and install
 
 Start the VM with the Windows 7 ISO attached:
 
@@ -46,23 +46,37 @@ The VM uses:
 - `e1000` networking so Windows 7 does not need VirtIO drivers just to boot
 - a FAT-backed shared disk at `.vm/win7/share`
 
-## Moving Files Into the Guest
+## Moving files into the guest
 
 Anything copied into `.vm/win7/share/` appears to the guest as an extra disk.
 
 Use that folder for:
 
-- the built `mobile-typer.exe`
-- installer scripts
-- test notes or logs
+- the repository checkout itself, if you want to build inside the VM
+- the vendored offline toolchain under `vendor/windows/`
+- the whole built `dist/windows/` directory when you want to validate the exact handoff bundle
+- installer scripts or the optional NSIS setup
+- test notes and logs
 
-## What This Actually Proves
+## Recommended trust model
+
+For the strongest Windows 7 confidence:
+
+1. populate `vendor/windows/` on the host
+2. copy the repository into the VM share
+3. build from inside the Windows 7 VM with [`scripts/build_windows.ps1`](../scripts/build_windows.ps1)
+4. install from the produced `dist/windows/` bundle inside that same VM
+
+That path keeps both the build and the validation on an actual Windows 7 environment.
+
+## What this actually proves
 
 From Linux, this VM lets you validate:
 
-- whether a Windows build launches on Windows 7
+- whether the vendored toolchain starts on Windows 7
+- whether the built bundle launches on Windows 7
 - whether the Tk window opens correctly
 - whether the HTTP UI loads in the guest browser
 - whether Win32 key injection works against a real Windows 7 guest app
 
-It does not magically solve cross-building. If you need a Windows 7-trustworthy build, the strongest route is to build inside the Windows 7 VM itself or at least run the produced build there.
+GitHub Actions and modern Windows builders are useful for scaffolding checks, but they are not a replacement for this trust path when Windows 7 behavior matters.

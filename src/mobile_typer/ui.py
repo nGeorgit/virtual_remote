@@ -9,7 +9,7 @@ import sys
 from collections import deque
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from .constants import (
     ACCENT,
@@ -49,7 +49,7 @@ class GuiLogHandler(logging.Handler):
         finally:
             self.release()
 
-    def snapshot(self) -> tuple[str, ...]:
+    def snapshot(self) -> Tuple[str, ...]:
         self.acquire()
         try:
             return tuple(self._records)
@@ -64,7 +64,7 @@ class GuiLogHandler(logging.Handler):
             self.release()
 
 
-def render_terminal_qr(data: str) -> str | None:
+def render_terminal_qr(data: str) -> Optional[str]:
     matrix = build_qr_matrix(data)
     if matrix is None:
         return None
@@ -77,7 +77,7 @@ def render_terminal_qr(data: str) -> str | None:
     )
 
 
-def build_qr_matrix(data: str) -> list[list[bool]] | None:
+def build_qr_matrix(data: str) -> Optional[List[List[bool]]]:
     try:
         import qrcode
     except ImportError:
@@ -116,7 +116,7 @@ def show_error_dialog(message: str, *, title: str = DESKTOP_APP_TITLE) -> None:
     print(message, file=sys.stderr)
 
 
-def get_windows_autostart_command() -> str | None:
+def get_windows_autostart_command() -> Optional[str]:
     if platform.system() != "Windows":
         return None
 
@@ -180,7 +180,7 @@ def set_windows_autostart(enabled: bool) -> None:
             return
 
 
-_REMOTE_CONTROL_SPECS: tuple[dict[str, object], ...] = (
+_REMOTE_CONTROL_SPECS: Tuple[Dict[str, object], ...] = (
     {"key": "a", "column": 1, "row": 1, "accent": "scarlet", "top_icon": "target", "bottom_icon": "swirl", "top_asset_height": "2.05rem", "down_asset_height": "1.55rem"},
     {"key": "b", "column": 2, "row": 1, "accent": "crimson", "top_icon": "ladder", "bottom_icon": "bolt", "top_asset_width": "100%", "top_asset_height": "2.6rem", "top_asset_justify": "flex-start", "down_asset_height": "1.65rem"},
     {"key": "c", "column": 3, "row": 1, "accent": "magenta", "top_icon": "steps", "bottom_icon": "bolt", "top_asset_width": "100%", "top_asset_height": "2.6rem", "top_asset_justify": "flex-end", "down_asset_height": "1.65rem"},
@@ -202,9 +202,9 @@ _REMOTE_CONTROL_SPECS: tuple[dict[str, object], ...] = (
 )
 
 
-def _build_remote_control_specs(allowed_keys: tuple[str, ...]) -> list[dict[str, object]]:
+def _build_remote_control_specs(allowed_keys: Tuple[str, ...]) -> List[Dict[str, object]]:
     known_specs = {str(spec["key"]): spec for spec in _REMOTE_CONTROL_SPECS}
-    controls: list[dict[str, object]] = []
+    controls: List[Dict[str, object]] = []
 
     for key in allowed_keys:
         spec = known_specs.get(key)
@@ -217,7 +217,7 @@ def _build_remote_control_specs(allowed_keys: tuple[str, ...]) -> list[dict[str,
     return controls
 
 
-def _render_remote_icon(kind: str | None) -> str:
+def _render_remote_icon(kind: Optional[str]) -> str:
     if not kind:
         return ""
 
@@ -271,8 +271,8 @@ def _render_remote_icon(kind: str | None) -> str:
     return f'<span class="button-icon" aria-hidden="true">{svg}</span>'
 
 
-def _iter_icon_dirs() -> list[Path]:
-    candidates: list[Path] = []
+def _iter_icon_dirs() -> List[Path]:
+    candidates: List[Path] = []
 
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
@@ -306,7 +306,7 @@ def _render_remote_svg_asset(key: str, position: str) -> str:
     )
 
 
-def _spec_has_secondary_action(spec: dict[str, object]) -> bool:
+def _spec_has_secondary_action(spec: Dict[str, object]) -> bool:
     key = str(spec["key"]).lower()
     if key == "e":
         return False
@@ -317,7 +317,7 @@ def _spec_has_secondary_action(spec: dict[str, object]) -> bool:
     return bool(str(spec.get("bottom_icon", "")).strip())
 
 
-def _get_remote_control_spec(key: str) -> dict[str, object] | None:
+def _get_remote_control_spec(key: str) -> Optional[Dict[str, object]]:
     normalized = key.lower()
     for spec in _REMOTE_CONTROL_SPECS:
         if str(spec["key"]).lower() == normalized:
@@ -328,11 +328,11 @@ def _get_remote_control_spec(key: str) -> dict[str, object] | None:
 
 
 def _render_remote_button(
-    spec: dict[str, object],
+    spec: Dict[str, object],
     *,
     interactive: bool = True,
-    extra_classes: tuple[str, ...] = (),
-    style_override: str | None = None,
+    extra_classes: Tuple[str, ...] = (),
+    style_override: Optional[str] = None,
 ) -> str:
     key = html.escape(str(spec["key"]))
     label = html.escape(str(spec["label"]))
@@ -396,7 +396,7 @@ def _render_remote_button(
         value = spec.get(spec_key)
         if value:
             css_vars.append(f"{css_var}: {value};")
-    style_parts: list[str] = []
+    style_parts: List[str] = []
     if style_override is not None:
         if style_override:
             style_parts.append(style_override)
@@ -518,8 +518,8 @@ def _render_guide_modifier_button_ref(*, secondary_armed: bool) -> str:
     )
 
 
-def _render_guide_button_cluster(*keys: str, separator: str | None = None) -> str:
-    cluster_parts: list[str] = []
+def _render_guide_button_cluster(*keys: str, separator: Optional[str] = None) -> str:
+    cluster_parts: List[str] = []
     separator_text = separator
     if separator_text is None and len(keys) > 1:
         separator_text = "+"
@@ -555,11 +555,11 @@ def _render_guide_button_cluster(*keys: str, separator: str | None = None) -> st
 
 def _render_guide_command_entry(
     title: str,
-    keys: tuple[str, ...],
+    keys: Tuple[str, ...],
     *,
     detail: str = "",
     note: str = "",
-    separator: str | None = None,
+    separator: Optional[str] = None,
 ) -> str:
     cluster_html = _render_guide_button_cluster(*keys, separator=separator)
     detail_html = (
@@ -583,10 +583,10 @@ def _render_guide_command_entry(
 def _render_guide_manual_section(
     title: str,
     meta: str,
-    entries: tuple[dict[str, object], ...],
+    entries: Tuple[Dict[str, object], ...],
     *,
     intro: str = "",
-    notes: tuple[str, ...] = (),
+    notes: Tuple[str, ...] = (),
 ) -> str:
     intro_html = (
         f'<p class="guide-section-intro">{html.escape(intro)}</p>' if intro else ""
@@ -954,7 +954,7 @@ def _render_remote_guide() -> str:
 """.strip()
 
 
-def render_page(allowed_keys: tuple[str, ...], urls: list[str], backend_name: str) -> str:
+def render_page(allowed_keys: Tuple[str, ...], urls: List[str], backend_name: str) -> str:
     controls = _build_remote_control_specs(allowed_keys)
     buttons_html = "\n".join(_render_remote_button(spec) for spec in controls)
     guide_trigger_html = _render_guide_trigger()
@@ -2994,7 +2994,7 @@ class MobileTyperWindow:
         self,
         server: MobileTyperHTTPServer,
         *,
-        log_handler: GuiLogHandler | None = None,
+        log_handler: Optional[GuiLogHandler] = None,
     ) -> None:
         import tkinter as tk
 
@@ -3008,15 +3008,15 @@ class MobileTyperWindow:
         self._root.minsize(430, 860)
 
         self._primary_url = server.state.urls[0] if server.state.urls else "http://localhost"
-        self._status_var: object | None = None
-        self._url_var: object | None = None
-        self._port_notice_var: object | None = None
-        self._qr_canvas: object | None = None
-        self._urls_frame: object | None = None
-        self._autostart_var: object | None = None
-        self._log_text: object | None = None
-        self._log_refresh_job: object | None = None
-        self._last_log_snapshot: tuple[str, ...] = ()
+        self._status_var: Optional[object] = None
+        self._url_var: Optional[object] = None
+        self._port_notice_var: Optional[object] = None
+        self._qr_canvas: Optional[object] = None
+        self._urls_frame: Optional[object] = None
+        self._autostart_var: Optional[object] = None
+        self._log_text: Optional[object] = None
+        self._log_refresh_job: Optional[object] = None
+        self._last_log_snapshot: Tuple[str, ...] = ()
         self._build_ui()
         self._schedule_log_refresh()
 

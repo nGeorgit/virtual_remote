@@ -5,12 +5,12 @@
 - a portrait hardware-style virtual remote with buttons `A` through `R`
 - a local JSON API used by that page
 
-When you tap a button from your phone, the page now waits briefly before sending it so it can detect a combo. Each additional button tapped during that window is added to the same combo and restarts the delay. When the delay expires, the computer running the server sends the full combo to the currently focused app on that computer. The `P` stop button is the exception: it bypasses the delay, clears any pending combo on the page, ignores secondary mode, and is sent immediately. By default the app also opens a small desktop window that shows the QR code and local phone URL.
+When you tap a button from your phone, the page waits briefly before sending it so it can detect a combo. Each additional button tapped during that window is added to the same combo and restarts the delay. When the delay expires, the computer running the server sends the full combo to the currently focused app on that computer. The `P` stop button is the exception: it bypasses the delay, clears any pending combo on the page, ignores secondary mode, and is sent immediately. By default the app also opens a small desktop window that shows the QR code and local phone URL.
 
 ## Requirements
 
-- `uv`
 - Python 3.8+
+- `qrcode>=7.4,<8`
 - Your phone and computer must be on the same Wi-Fi network
 - Keep the target app focused on your computer
 
@@ -18,48 +18,40 @@ When you tap a button from your phone, the page now waits briefly before sending
 
 - Linux: this implementation uses X11/XTest. It is intended for X11 sessions.
 - macOS: uses `osascript` and requires accessibility permissions for terminal/apps that send input.
-- Windows: uses the native Win32 keyboard event API.
+- Windows: uses the native Win32 `SendInput` keyboard API.
 
 ### Windows 7 branch note
 
 The `win7-spike` branch lowers the runtime and build baseline so the app can be tested on Windows 7 SP1. It is a legacy-compatibility branch, not the preferred branch for Windows 10 or 11.
 
-If you do not have a physical Windows 7 machine, the branch includes a Linux-side QEMU workflow in [docs/win7_vm.md](docs/win7_vm.md).
+If you do not have a physical Windows 7 machine, use the VM workflow in [`docs/win7_vm.md`](docs/win7_vm.md).
 
 ## Run
+
+Development convenience with `uv`:
 
 ```bash
 uv run run_mobile_typer.py
 ```
 
-By default the server binds to `0.0.0.0:8000` so devices on the same network can reach it.
-When it starts, it opens a desktop window with the QR code for the preferred local URL so your phone can open it directly.
-
-You can also choose a custom port:
+Plain Python:
 
 ```bash
-uv run run_mobile_typer.py --port 8765
+python3 run_mobile_typer.py
 ```
 
-If you only want to test the webpage and API without sending real keypresses:
+By default the server binds to `0.0.0.0:8000` so devices on the same network can reach it. When it starts, it opens a desktop window with the QR code for the preferred local URL so your phone can open it directly.
+
+Common options:
 
 ```bash
-uv run run_mobile_typer.py --dry-run
+python3 run_mobile_typer.py --port 8765
+python3 run_mobile_typer.py --dry-run
+python3 run_mobile_typer.py --no-gui
+python3 run_mobile_typer.py --port 8000 --strict-port
 ```
 
-If you want the old terminal-only mode instead of the QR window:
-
-```bash
-uv run run_mobile_typer.py --no-gui
-```
-
-If you want the app to fail instead of switching to another free port when the chosen port is busy:
-
-```bash
-uv run run_mobile_typer.py --port 8000 --strict-port
-```
-
-If you prefer the package entrypoint, `uv run mobile-typer` is also configured in `pyproject.toml`.
+`uv` remains in the repository for developer convenience only. It is not the authoritative Windows 7 build path.
 
 ## Use
 
@@ -75,79 +67,64 @@ If you prefer the package entrypoint, `uv run mobile-typer` is also configured i
 ## Test
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests
+PYTHONPATH=src python3 -m unittest tests.test_app
 ```
 
-## Build A Windows EXE
+## Authoritative Windows 7 build and install
 
-The Windows build now produces a windowed `.exe`, not a console executable. The QR code and the local URLs appear in the app window itself.
+The authoritative Windows 7 packaging path is offline, repo-local, and deterministic-first:
 
-### Build on Windows locally
+- build inputs live under [`vendor/windows/`](vendor/windows/)
+- the canonical artifact is the onedir bundle at `dist/windows/mobile-typer/`
+- the authoritative builder is [`scripts/build_windows.ps1`](scripts/build_windows.ps1) or [`scripts/build_windows.bat`](scripts/build_windows.bat)
+- the checked-in PyInstaller definition is [`packaging/mobile_typer.spec`](packaging/mobile_typer.spec)
+- the checked-in NSIS definition is [`packaging/mobile_typer_win7.nsi`](packaging/mobile_typer_win7.nsi)
 
-On a Windows machine, run:
+Use these documents as the source of truth:
 
-```bat
-scripts\build_windows.bat
-```
+- [`docs/win7_build.md`](docs/win7_build.md)
+- [`docs/win7_install.md`](docs/win7_install.md)
+- [`docs/win7_vm.md`](docs/win7_vm.md)
+- [`vendor/windows/README.md`](vendor/windows/README.md)
 
-or:
+### Output layout
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
-```
-
-The build script checks for everything it needs. If `uv` is missing, it downloads a local copy into the repository. If a supported Python is missing, it installs it through `uv`. Then it runs the PyInstaller build. You do not need to preinstall `uv` on the Windows build machine.
-
-For the `win7-spike` branch, the intended target is Windows 7 SP1. The client machine may also need the `KB2533623` update before the bundled Python runtime can start.
-
-That produces:
+A successful authoritative Windows build produces:
 
 ```text
-dist\mobile-typer.exe
+dist/windows/mobile-typer/
+dist/windows/install_mobile_typer.ps1
+dist/windows/install_mobile_typer.bat
+dist/windows/mobile_typer_win7.nsi
+dist/windows/vendor-manifest.json
+dist/windows/vendor-SHA256SUMS.txt
+dist/windows/build-manifest.json
+dist/windows/SHA256SUMS.txt
 ```
 
-It also stages:
+If `vendor/windows/nsis/makensis.exe` has been vendored, the build also produces:
 
 ```text
-dist\install_mobile_typer.ps1
-dist\install_mobile_typer.bat
+dist/windows/mobile-typer-win7-setup.exe
 ```
 
-That `.exe` is what you send to the client. The client does not need `uv` or Python installed.
+### Important Windows 7 notes
 
-### Install on the client machine
+- The build script does **not** download `uv`, Python, PyInstaller, NSIS, or any other tools.
+- The repository ships the vendor manifest and placeholder hash files now; fill them in when the actual artifacts are vendored.
+- The PowerShell installer remains the reliable fallback because it also handles optional auto-start and the Windows Firewall rule.
+- The NSIS installer definition is checked in for deterministic packaging, but its binary toolchain must be vendored before it becomes fully buildable.
+- Some Windows 7 machines need update `KB2533623` before newer Python 3.8 runtime files can load correctly.
 
-You can give the client the files from `dist\`.
+### GitHub Actions status
 
-- `mobile-typer.exe`: the app itself
-- `install_mobile_typer.bat`: a simple installer launcher
-- `install_mobile_typer.ps1`: the installer logic
+The repository workflow no longer claims to publish a trusted Windows 7 binary. It validates the repo scaffolding only. A trusted Windows 7 bundle should be built from the vendored offline toolchain on a Windows machine or a Windows 7 VM that you control.
 
-The installer copies the app into `%LocalAppData%\MobileTyper`, creates Start Menu and Desktop shortcuts, can enable auto-start on login, and can add a Windows Firewall rule when run as Administrator. On older Windows versions where the NetSecurity PowerShell cmdlets are missing, it falls back to `netsh advfirewall`.
+### Practical deployment summary
 
-### Optional code signing prep
-
-The Windows build script already includes version metadata and an optional signing hook.
-
-- Set `MOBILE_TYPER_SIGN_PFX` to a `.pfx` certificate path.
-- Set `MOBILE_TYPER_SIGN_PFX_PASSWORD` to the certificate password.
-- Optionally set `MOBILE_TYPER_SIGN_TIMESTAMP_URL` for timestamping.
-
-If those variables are not set, the build still works and simply skips signing.
-
-### Build on GitHub Actions
-
-This repo now includes a workflow at `.github/workflows/build-windows-exe.yml`.
-
-1. Push the repository to GitHub.
-2. Open the `build-windows-exe` workflow.
-3. Run it manually with `workflow_dispatch`.
-4. Download the `mobile-typer-windows-bundle` artifact.
-
-### Client behavior on Windows
-
-- The client runs `mobile-typer.exe`.
-- A desktop window opens and shows the QR code and local URL.
-- The focused Windows app receives the matching `a` through `r` keypresses.
-- Closing the app window stops the server.
-- If the preferred port is busy, the app automatically switches to another free port unless you built or ran it with strict port expectations.
+1. Populate [`vendor/windows/`](vendor/windows/) exactly as described in [`vendor/windows/manifest.json`](vendor/windows/manifest.json) and [`vendor/windows/README.md`](vendor/windows/README.md).
+2. Build on Windows with [`scripts/build_windows.ps1`](scripts/build_windows.ps1) or inside the Windows 7 VM workflow from [`docs/win7_vm.md`](docs/win7_vm.md).
+3. Hand over the entire `dist/windows/` output directory, preserving the sibling layout of `mobile-typer/`, `install_mobile_typer.bat`, `install_mobile_typer.ps1`, and the manifest/hash files.
+4. On the destination Windows 7 machine, prefer `mobile-typer-win7-setup.exe` when it exists. Otherwise run `install_mobile_typer.bat` from the unpacked `dist/windows/` directory.
+5. If the phone cannot connect after install, rerun [`install_mobile_typer.ps1`](scripts/install_mobile_typer.ps1) as Administrator so it can add the firewall rule.
+6. Launch `Mobile Remote`, open the shown LAN URL or QR code from the phone, and keep the target Windows app focused and non-elevated while sending keys.

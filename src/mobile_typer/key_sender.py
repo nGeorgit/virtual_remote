@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import threading
 from collections.abc import Sequence
-from typing import Protocol
+from typing import List, Optional, Protocol, Tuple
 
 from .constants import LOGGER
 
@@ -72,7 +72,7 @@ class UnsupportedPlatformError(RuntimeError):
     """Raised when no usable backend exists for the current platform."""
 
 
-def _coerce_combo_keys(keys: Sequence[str]) -> tuple[str, ...]:
+def _coerce_combo_keys(keys: Sequence[str]) -> Tuple[str, ...]:
     key_sequence = tuple(keys)
     if not key_sequence:
         raise KeypressError("Combo press requires at least one key.")
@@ -344,7 +344,7 @@ class WindowsKeySender:
             ),
         )
 
-    def _describe_foreground_window(self) -> str | None:
+    def _describe_foreground_window(self) -> Optional[str]:
         handle = self._user32.GetForegroundWindow()
         if not handle:
             return None
@@ -388,7 +388,7 @@ class WindowsKeySender:
 
     def press_combo(self, keys: Sequence[str]) -> None:
         key_sequence = _coerce_combo_keys(keys)
-        inputs: list[WindowsSendInput] = []
+        inputs: List[WindowsSendInput] = []
         for key in key_sequence:
             inputs.append(self._build_key_input(key))
         for key in reversed(key_sequence):
@@ -409,7 +409,7 @@ def select_key_sender(*, dry_run: bool = False) -> KeySender:
 
     system = platform.system()
     if system == "Linux":
-        backend_errors: list[str] = []
+        backend_errors: List[str] = []
         try:
             return LinuxX11KeySender()
         except UnsupportedPlatformError as exc:

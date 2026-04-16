@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
+from typing import Dict, List, Optional, Tuple
 from .constants import ALLOWED_KEYS, EMERGENCY_STOP_KEY, LOGGER
 from .key_sender import KeySender, KeypressError, UnsupportedPlatformError
 from .network import discover_urls, fallback_ports, is_port_in_use_error
@@ -17,19 +18,19 @@ from .ui import render_page
 @dataclass
 class AppState:
     key_sender: KeySender
-    allowed_keys: tuple[str, ...] = ALLOWED_KEYS
+    allowed_keys: Tuple[str, ...] = ALLOWED_KEYS
     secondary_modifier: str = "e"
-    urls: list[str] = field(default_factory=list)
+    urls: List[str] = field(default_factory=list)
     requested_host: str = "0.0.0.0"
     requested_port: int = 8000
     actual_port: int = 8000
-    port_notice: str | None = None
+    port_notice: Optional[str] = None
 
 
 @dataclass(frozen=True)
 class PressRequest:
-    key: str | None = None
-    keys: tuple[str, ...] = ()
+    key: Optional[str] = None
+    keys: Tuple[str, ...] = ()
     use_secondary: bool = False
 
     @property
@@ -41,12 +42,12 @@ class PressRequest:
         return self.key == EMERGENCY_STOP_KEY or EMERGENCY_STOP_KEY in self.keys
 
 
-def _allowed_keys_error(allowed_keys: tuple[str, ...]) -> str:
+def _allowed_keys_error(allowed_keys: Tuple[str, ...]) -> str:
     return f"Only these keys are allowed: {', '.join(allowed_keys)}."
 
 
-def _iter_manual_pdf_paths() -> tuple[Path, ...]:
-    candidates: list[Path] = []
+def _iter_manual_pdf_paths() -> Tuple[Path, ...]:
+    candidates: List[Path] = []
 
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
@@ -57,7 +58,7 @@ def _iter_manual_pdf_paths() -> tuple[Path, ...]:
     return tuple(candidates)
 
 
-def _find_manual_pdf() -> Path | None:
+def _find_manual_pdf() -> Optional[Path]:
     for candidate in _iter_manual_pdf_paths():
         if candidate.is_file():
             return candidate
@@ -65,8 +66,8 @@ def _find_manual_pdf() -> Path | None:
 
 
 def _parse_press_request(
-    payload: object, allowed_keys: tuple[str, ...]
-) -> tuple[PressRequest | None, str | None]:
+    payload: object, allowed_keys: Tuple[str, ...]
+) -> Tuple[Optional[PressRequest], Optional[str]]:
     if not isinstance(payload, dict):
         return None, "Body must be a JSON object."
 
@@ -108,7 +109,7 @@ def _parse_press_request(
 class MobileTyperHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, server_address: tuple[str, int], state: AppState) -> None:
+    def __init__(self, server_address: Tuple[str, int], state: AppState) -> None:
         super().__init__(server_address, MobileTyperHandler)
         self.state = state
 
@@ -271,7 +272,7 @@ class MobileTyperHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         LOGGER.info("%s - %s", self.address_string(), format % args)
 
-    def _send_json(self, status: HTTPStatus, payload: dict[str, object]) -> None:
+    def _send_json(self, status: HTTPStatus, payload: Dict[str, object]) -> None:
         body = json.dumps(payload).encode("utf-8")
         self._send_response(status, body, content_type="application/json; charset=utf-8")
 
@@ -281,7 +282,7 @@ class MobileTyperHandler(BaseHTTPRequestHandler):
         body: bytes,
         *,
         content_type: str,
-        headers: dict[str, str] | None = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -336,7 +337,7 @@ def create_server(
     return server
 
 
-def refresh_server_urls(server: MobileTyperHTTPServer) -> list[str]:
+def refresh_server_urls(server: MobileTyperHTTPServer) -> List[str]:
     urls = discover_urls(server.state.actual_port, server.state.requested_host)
     server.state.urls = urls
     return urls

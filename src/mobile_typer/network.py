@@ -2,18 +2,19 @@ from __future__ import annotations
 
 import socket
 
+from typing import List, Set
 from .constants import PORT_IN_USE_ERRNOS
 
 
-def discover_urls(port: int, bind_host: str) -> list[str]:
+def discover_urls(port: int, bind_host: str) -> List[str]:
     if bind_host not in {"0.0.0.0", "::"}:
         host = bind_host
         if host == "127.0.0.1":
             return [f"http://localhost:{port}"]
         return [f"http://{host}:{port}"]
 
-    addresses: list[str] = []
-    seen_addresses: set[str] = set()
+    addresses: List[str] = []
+    seen_addresses: Set[str] = set()
 
     def add_address(ip: str) -> None:
         if not ip or ip.startswith("127.") or ip in seen_addresses:
@@ -50,11 +51,11 @@ def is_port_in_use_error(exc: OSError) -> bool:
     return exc.errno in PORT_IN_USE_ERRNOS or "address already in use" in str(exc).lower()
 
 
-def fallback_ports(port: int, attempts: int = 10) -> list[int]:
+def fallback_ports(port: int, attempts: int = 10) -> List[int]:
     if port <= 0:
         return [0]
 
-    ports: list[int] = []
+    ports: List[int] = []
     for offset in range(1, attempts + 1):
         candidate = port + offset
         if candidate > 65535:

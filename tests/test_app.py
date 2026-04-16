@@ -12,6 +12,8 @@ import urllib.request
 from pathlib import Path
 from unittest import mock
 
+from typing import Dict, List, Optional, Tuple
+
 from mobile_typer.app import (
     COMBO_WINDOW_MS,
     EMERGENCY_STOP_KEY,
@@ -39,14 +41,14 @@ class FakeKeySender:
     backend_name = "fake"
 
     def __init__(self) -> None:
-        self.pressed: list[str] = []
-        self.chords: list[tuple[str, str]] = []
-        self.combos: list[tuple[str, ...]] = []
+        self.pressed: List[str] = []
+        self.chords: List[Tuple[str, str]] = []
+        self.combos: List[Tuple[str, ...]] = []
 
     def press(self, key: str) -> None:
         self.pressed.append(key)
 
-    def press_combo(self, keys: tuple[str, ...]) -> None:
+    def press_combo(self, keys: Tuple[str, ...]) -> None:
         self.combos.append(tuple(keys))
 
     def press_chord(self, modifier: str, key: str) -> None:
@@ -74,10 +76,10 @@ class MobileTyperServerTests(unittest.TestCase):
         path: str,
         *,
         method: str = "GET",
-        payload: dict[str, object] | None = None,
-    ) -> tuple[int, str]:
+        payload: Optional[Dict[str, object]] = None,
+    ) -> Tuple[int, str]:
         data = None
-        headers: dict[str, str] = {}
+        headers: Dict[str, str] = {}
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")
             headers["Content-Type"] = "application/json"
@@ -96,10 +98,10 @@ class MobileTyperServerTests(unittest.TestCase):
         path: str,
         *,
         method: str = "GET",
-        payload: dict[str, object] | None = None,
-    ) -> tuple[int, bytes, str, str | None]:
+        payload: Optional[Dict[str, object]] = None,
+    ) -> Tuple[int, bytes, str, Optional[str]]:
         data = None
-        headers: dict[str, str] = {}
+        headers: Dict[str, str] = {}
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")
             headers["Content-Type"] = "application/json"
@@ -123,10 +125,10 @@ class MobileTyperServerTests(unittest.TestCase):
         path: str,
         *,
         method: str = "GET",
-        payload: dict[str, object] | None = None,
-    ) -> tuple[int, str]:
+        payload: Optional[Dict[str, object]] = None,
+    ) -> Tuple[int, str]:
         data = None
-        headers: dict[str, str] = {}
+        headers: Dict[str, str] = {}
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")
             headers["Content-Type"] = "application/json"
@@ -587,3 +589,4 @@ class WindowsStructureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+from typing import Dict, List, Optional, Tuple

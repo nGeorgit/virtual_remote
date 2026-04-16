@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "description": "Authoritative offline Windows 7 build inputs for Mobile Typer.",
+  "python": {
+    "relative_path": "vendor/windows/python/python.exe",
+    "version": "3.8.10",
+    "architecture": "x64",
+    "sha256": "TO_BE_FILLED"
+  },
+  "wheelhouse": [
+    {
+      "relative_path": "vendor/windows/wheels/altgraph-0.17.4-py2.py3-none-any.whl",
+      "sha256": "TO_BE_FILLED"
+    },
+    {
+      "relative_path": "vendor/windows/wheels/pefile-2023.2.7-py3-none-any.whl",
+      "sha256": "TO_BE_FILLED"
+    },
+    {
+      "relative_path": "vendor/windows/wheels/Pillow-10.4.0-cp38-cp38-win_amd64.whl",
+      "sha256": "TO_BE_FILLED"
+    },
+    {
+      "relative_path": "vendor/windows/wheels/pyinstaller-4.7-py3-none-win_amd64.whl",
+      "sha256": "TO_BE_FILLED"
+    },
+    {
+      "relative_path": "vendor/windows/wheels/pyinstaller_hooks_contrib-2021.4-py2.py3-none-any.whl",
+      "sha256": "TO_BE_FILLED"
+    },
+    {
+      "relative_path": "vendor/windows/wheels/pywin32_ctypes-0.2.3-py3-none-any.whl",
+      "sha256": "TO_BE_FILLED"
+    },
+    {
+      "relative_path": "vendor/windows/wheels/qrcode-7.4.2-py3-none-any.whl",
+      "sha256": "TO_BE_FILLED"
+    }
+  ],
+  "installer_tools": [
+    {
+      "relative_path": "vendor/windows/nsis/makensis.exe",
+      "optional": true,
+      "sha256": "TO_BE_FILLED"
+    }
+  ]
+}

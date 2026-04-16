@@ -5,6 +5,8 @@ import logging
 import socket
 import threading
 
+from typing import List, Optional
+
 from .constants import (
     ACCENT,
     ALLOWED_KEYS,
@@ -57,7 +59,7 @@ from .ui import (
 )
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Serve a local webpage and API that send remote keypresses to this computer."
     )
@@ -95,7 +97,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
     logging.basicConfig(
         level=logging.INFO if args.verbose else logging.WARNING,
@@ -105,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     for handler in logging.getLogger().handlers:
         handler.setLevel(root_handler_level)
 
-    gui_log_handler: GuiLogHandler | None = None
+    gui_log_handler: Optional[GuiLogHandler] = None
     if not args.no_gui:
         LOGGER.setLevel(logging.INFO)
         gui_log_handler = GuiLogHandler()
