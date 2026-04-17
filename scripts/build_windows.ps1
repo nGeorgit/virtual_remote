@@ -87,7 +87,18 @@ function Read-VendorManifest {
         throw "Missing vendor manifest at $manifestPath"
     }
 
-    return Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+    $json = Get-Content -Path $manifestPath -Raw
+
+    # PowerShell 3+ provides ConvertFrom-Json. PowerShell 2.0 does not.
+    $convertCmd = Get-Command ConvertFrom-Json -ErrorAction SilentlyContinue
+    if ($convertCmd) {
+        return $json | ConvertFrom-Json
+    }
+
+    # Fallback for PowerShell 2.0 using .NET JavaScriptSerializer
+    Add-Type -AssemblyName System.Web.Extensions
+    $serializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+    return $serializer.DeserializeObject($json)
 }
 
 function Assert-VendorArtifact {
