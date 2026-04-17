@@ -10,4 +10,7 @@ qrcode==7.4.2
 # Python 3.8 / Windows transitive requirements required by the offline wheelhouse.
 colorama==0.4.6
 pypng==0.20220715.0
-typing-extensions==4.13.2
+# PyInstaller 4.7 crashes during bytecode scanning with newer typing-extensions
+# on Python 3.8 (AttributeError: 'NoneType' object has no attribute 'co_code').
+# Pin to a pre‑PEP‑695 era version that does not trigger the bug.
+typing-extensions==4.5.0
