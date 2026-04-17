@@ -91,6 +91,8 @@ From a Windows 10 maintainer machine or from inside the Windows 7 VM:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
 ```
 
+The script is intended to stay compatible with Windows PowerShell 2.0. If you want to explicitly exercise the v2 engine on a machine where it is available, use `powershell -Version 2 -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1`.
+
 or:
 
 ```bat

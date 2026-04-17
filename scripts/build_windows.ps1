@@ -82,12 +82,68 @@ function Test-PlaceholderHash {
     return $Hash -match "^(TO_BE_FILLED|PLACEHOLDER|REPLACE_ME)"
 }
 
+function Get-ManifestValue {
+    param(
+        [Parameter(Mandatory = $true)]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    if ($InputObject -is [System.Collections.IDictionary]) {
+        return $InputObject[$Name]
+    }
+
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($property) {
+        return $property.Value
+    }
+
+    return $null
+}
+
+function Get-FileSha256 {
+    param([string]$Path)
+
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $sha256 = New-Object System.Security.Cryptography.SHA256Managed
+        try {
+            $hashBytes = $sha256.ComputeHash($stream)
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+
+    return ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
+}
+
+function ConvertTo-JsonCompat {
+    param($InputObject)
+
+    $convertCmd = Get-Command ConvertTo-Json -ErrorAction SilentlyContinue
+    if ($convertCmd) {
+        return $InputObject | ConvertTo-Json -Depth 5
+    }
+
+    Add-Type -AssemblyName System.Web.Extensions
+    $serializer = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+    $serializer.MaxJsonLength = [int]::MaxValue
+    return $serializer.Serialize($InputObject)
+}
+
 function Read-VendorManifest {
     if (-not (Test-Path $manifestPath -PathType Leaf)) {
         throw "Missing vendor manifest at $manifestPath"
     }
 
-    $json = Get-Content -Path $manifestPath -Raw
+    $json = [System.IO.File]::ReadAllText($manifestPath)
 
     # PowerShell 3+ provides ConvertFrom-Json. PowerShell 2.0 does not.
     $convertCmd = Get-Command ConvertFrom-Json -ErrorAction SilentlyContinue
@@ -107,20 +163,26 @@ function Assert-VendorArtifact {
         [switch]$Optional
     )
 
-    $artifactPath = Resolve-RepoPath $Artifact.relative_path
+    $relativePath = [string](Get-ManifestValue -InputObject $Artifact -Name "relative_path")
+    if (-not $relativePath) {
+        throw "Vendor manifest entry is missing relative_path."
+    }
+
+    $artifactPath = Resolve-RepoPath $relativePath
     if (-not (Test-Path $artifactPath)) {
         if ($Optional) {
             return $null
         }
 
-        throw "Missing vendored artifact: $($Artifact.relative_path). See vendor/windows/README.md for the required layout."
+        throw "Missing vendored artifact: $relativePath. See vendor/windows/README.md for the required layout."
     }
 
-    if (-not (Test-PlaceholderHash $Artifact.sha256)) {
-        $actualHash = (Get-FileHash -Path $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
-        $expectedHash = ([string]$Artifact.sha256).ToLowerInvariant()
+    $expectedArtifactHash = [string](Get-ManifestValue -InputObject $Artifact -Name "sha256")
+    if (-not (Test-PlaceholderHash $expectedArtifactHash)) {
+        $actualHash = Get-FileSha256 -Path $artifactPath
+        $expectedHash = $expectedArtifactHash.ToLowerInvariant()
         if ($actualHash -ne $expectedHash) {
-            throw "SHA256 mismatch for $($Artifact.relative_path). Expected $expectedHash but found $actualHash."
+            throw "SHA256 mismatch for $relativePath. Expected $expectedHash but found $actualHash."
         }
     }
 
@@ -130,21 +192,23 @@ function Assert-VendorArtifact {
 function Get-PythonExecutable {
     param($Manifest)
 
-    if (-not $Manifest.python) {
+    $python = Get-ManifestValue -InputObject $Manifest -Name "python"
+    if (-not $python) {
         throw "vendor/windows/manifest.json does not define the vendored Python runtime."
     }
 
-    return Assert-VendorArtifact -Artifact $Manifest.python
+    return Assert-VendorArtifact -Artifact $python
 }
 
 function Get-NSISExecutable {
     param($Manifest)
 
-    if (-not $Manifest.installer_tools) {
+    $installerTools = Get-ManifestValue -InputObject $Manifest -Name "installer_tools"
+    if (-not $installerTools) {
         return $null
     }
 
-    foreach ($artifact in $Manifest.installer_tools) {
+    foreach ($artifact in $installerTools) {
         $artifactPath = Assert-VendorArtifact -Artifact $artifact -Optional
         if ($artifactPath) {
             return $artifactPath
@@ -157,11 +221,12 @@ function Get-NSISExecutable {
 function Assert-Wheelhouse {
     param($Manifest)
 
-    if (-not $Manifest.wheelhouse) {
+    $wheelhouse = Get-ManifestValue -InputObject $Manifest -Name "wheelhouse"
+    if (-not $wheelhouse) {
         throw "vendor/windows/manifest.json does not define the offline wheelhouse."
     }
 
-    foreach ($artifact in $Manifest.wheelhouse) {
+    foreach ($artifact in $wheelhouse) {
         [void](Assert-VendorArtifact -Artifact $artifact)
     }
 }
@@ -229,7 +294,11 @@ function Invoke-PyInstallerBuild {
 function Resolve-SignTool {
     $command = Get-Command signtool.exe -ErrorAction SilentlyContinue
     if ($command) {
-        return $command.Source
+        if ($command.Source) {
+            return $command.Source
+        }
+
+        return $command.Definition
     }
 
     $kitsRoot = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
@@ -315,17 +384,17 @@ function Build-NSISInstaller {
 }
 
 function Write-OutputManifest {
-    $files = Get-ChildItem -Path $distRoot -File -Recurse |
-        Where-Object { $_.FullName -ne $hashOutputPath } |
+    $files = Get-ChildItem -Path $distRoot -Recurse |
+        Where-Object { -not $_.PSIsContainer -and $_.FullName -ne $hashOutputPath } |
         Sort-Object FullName
 
     $hashLines = @()
     $manifestEntries = @()
     foreach ($file in $files) {
-        $hash = (Get-FileHash -Path $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        $hash = Get-FileSha256 -Path $file.FullName
         $relativePath = Get-RepoRelativePath $file.FullName
         $hashLines += "$hash *$relativePath"
-        $manifestEntries += [pscustomobject]@{
+        $manifestEntries += @{
             path = $relativePath
             sha256 = $hash
             bytes = $file.Length
@@ -334,14 +403,14 @@ function Write-OutputManifest {
 
     Set-Content -Path $hashOutputPath -Value $hashLines
 
-    $buildManifest = [pscustomobject]@{
+    $buildManifest = @{
         schema_version = 1
         canonical_artifact = "dist/windows/mobile-typer/"
         python_hash_seed = $env:PYTHONHASHSEED
         source_date_epoch = $env:SOURCE_DATE_EPOCH
         generated_files = $manifestEntries
     }
-    $buildManifest | ConvertTo-Json -Depth 5 | Set-Content -Path $bundleManifestOutputPath
+    Set-Content -Path $bundleManifestOutputPath -Value (ConvertTo-JsonCompat -InputObject $buildManifest)
 }
 
 $manifest = Read-VendorManifest
