@@ -6,7 +6,20 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+# PowerShell 2.0 does not populate $PSScriptRoot, so fall back to the invoked script path.
+$scriptRoot = $null
+$psScriptRootVariable = Get-Variable -Name PSScriptRoot -ErrorAction SilentlyContinue
+if ($psScriptRootVariable -and $psScriptRootVariable.Value) {
+    $scriptRoot = $psScriptRootVariable.Value
+}
+elseif ($MyInvocation.MyCommand.Path) {
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+else {
+    throw "Unable to determine the build script directory."
+}
+
+$repoRoot = (Resolve-Path (Join-Path $scriptRoot "..")).Path
 Set-Location $repoRoot
 
 $vendorRoot = Join-Path $repoRoot "vendor\windows"

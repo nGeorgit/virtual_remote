@@ -10,4 +10,4 @@ qrcode==7.4.2
 # Python 3.8 / Windows transitive requirements required by the offline wheelhouse.
 colorama==0.4.6
 pypng==0.20220715.0
-typing-extensions==4.13.2
+typing-extensions==4.5.0
