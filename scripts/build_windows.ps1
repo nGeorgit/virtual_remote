@@ -66,7 +66,8 @@ function Get-RepoRelativePath {
     $full = [System.IO.Path]::GetFullPath($FullPath)
     $root = [System.IO.Path]::GetFullPath($repoRoot)
     if ($full.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return $full.Substring($root.Length).TrimStart('\') -replace "\", "/"
+        $relative = $full.Substring($root.Length).TrimStart('\')
+        return $relative.Replace('\', '/')
     }
 
     return $full

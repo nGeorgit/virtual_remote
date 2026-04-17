@@ -5,6 +5,8 @@
     "relative_path": "vendor/windows/python/python.exe",
     "version": "3.8.10",
     "architecture": "x64",
+    "distribution": "full",
+    "tk_support": true,
     "sha256": "5275c42f7359fa2c7ec473be3240e57d5ce5b9301a26bd2e98e89bb9db074581"
   },
   "wheelhouse": [

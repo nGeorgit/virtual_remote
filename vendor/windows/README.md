@@ -8,7 +8,8 @@ If the repository currently contains only the manifest, hashes, and README scaff
 
 ## Required layout
 
-- `python/python.exe`: a vendored CPython 3.8.x runtime used to create the build venv.
+- `python/python.exe`: a vendored full CPython 3.8.x runtime used to create the build venv.
+- `python/Lib/tkinter`, `python/DLLs/_tkinter.pyd`, `python/DLLs/tcl86t.dll`, `python/DLLs/tk86t.dll`, and `python/tcl/`: required GUI runtime pieces that must be present in the committed CPython tree.
 - `wheels/*.whl`: the exact offline wheelhouse declared in [`vendor/windows/manifest.json`](manifest.json).
 - `nsis/makensis.exe`: optional. If present, [`scripts/build_windows.ps1`](../../scripts/build_windows.ps1) also builds the NSIS installer from [`packaging/mobile_typer_win7.nsi`](../../packaging/mobile_typer_win7.nsi).
 

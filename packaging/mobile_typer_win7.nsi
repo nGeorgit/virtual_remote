@@ -1,3 +1,5 @@
+Unicode false
+
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 
@@ -21,7 +23,6 @@ RequestExecutionLevel highest
 SetCompressor /SOLID lzma
 ShowInstDetails show
 ShowUninstDetails show
-Unicode false
 BrandingText "Mobile Remote Windows 7 Installer"
 
 Var AccountType
@@ -47,6 +48,10 @@ Function .onInit
 FunctionEnd
 
 Function RefreshShellIcons
+  System::Call 'shell32::SHChangeNotify(i, i, p, p) v (0x08000000, 0, 0, 0)'
+FunctionEnd
+
+Function un.RefreshShellIcons
   System::Call 'shell32::SHChangeNotify(i, i, p, p) v (0x08000000, 0, 0, 0)'
 FunctionEnd
 
@@ -131,5 +136,5 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
   RMDir /r "$INSTDIR"
 
-  Call RefreshShellIcons
+  Call un.RefreshShellIcons
 SectionEnd

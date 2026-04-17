@@ -13,7 +13,7 @@ This document is the authoritative maintainer workflow for producing Windows 7 a
 
 1. Confirm that the repository checkout already contains the Windows build ingredients under [`vendor/windows/`](../vendor/windows/).
 2. Treat [`vendor/windows/`](../vendor/windows/) as repo-committed maintainer/build material:
-   - `python/` holds the Windows Python 3.8 runtime used for the build
+   - `python/` holds the full Windows Python 3.8 runtime used for the build, including Tk/Tcl for the GUI bundle
    - `wheels/` holds the offline Python packages used for the build
    - `nsis/` holds the optional NSIS toolchain used to make the final installer `.exe`
 3. Build on either of these maintainer environments:
@@ -78,7 +78,7 @@ The current build flow instead:
 
 Before running the build, make sure all of the following are true:
 
-1. The repository checkout already contains the exact offline inputs declared in [`vendor/windows/manifest.json`](../vendor/windows/manifest.json).
+1. The repository checkout already contains the exact offline inputs declared in [`vendor/windows/manifest.json`](../vendor/windows/manifest.json), including the full Tk-enabled CPython runtime under [`vendor/windows/python/`](../vendor/windows/python/).
 2. The placeholder hashes in [`vendor/windows/SHA256SUMS.txt`](../vendor/windows/SHA256SUMS.txt) and [`vendor/windows/manifest.json`](../vendor/windows/manifest.json) have been replaced with real digests once the artifacts are vendored.
 3. You have read [`vendor/windows/README.md`](../vendor/windows/README.md) so the `python/`, `wheels/`, and optional `nsis/` layout matches what the scripts expect.
 4. If you want the normal Windows installer `.exe`, `vendor/windows/nsis/makensis.exe` is present.

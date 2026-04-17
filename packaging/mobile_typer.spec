@@ -1,8 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
 
+from PyInstaller.depend.analysis import PyiModuleGraph
+
+
 block_cipher = None
 project_root = Path(SPEC).resolve().parents[1]
+
+
+# PyInstaller 4.7 can crash in PyiModuleGraph.metadata_required() while scanning
+# distribution metadata via hook-packaging.py. This app does not use runtime
+# package metadata, so short-circuit that scan at spec execution time.
+PyiModuleGraph.metadata_required = lambda self: set()
+
 
 analysis = Analysis(
     [str(project_root / "run_mobile_typer.py")],
@@ -12,7 +22,13 @@ analysis = Analysis(
         (str(project_root / "icons"), "icons"),
         (str(project_root / "manual.pdf"), "."),
     ],
-    hiddenimports=["qrcode", "qrcode.image.pil", "tkinter", "tkinter.messagebox"],
+    hiddenimports=[
+        "qrcode",
+        "qrcode.image.pil",
+        "tkinter",
+        "tkinter.messagebox",
+        "_tkinter",
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

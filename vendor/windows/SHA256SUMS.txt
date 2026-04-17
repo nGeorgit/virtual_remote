@@ -1,4 +1,10 @@
 5275c42f7359fa2c7ec473be3240e57d5ce5b9301a26bd2e98e89bb9db074581 *vendor/windows/python/python.exe
+af259d3faead1673349e5394c97fc0b7aa77b1248de7fe06f304eb540171b150 *vendor/windows/python/Lib/tkinter/__init__.py
+d55ef406b4612695499186355a6130885ad522e48556327c0fb409e0345d552d *vendor/windows/python/DLLs/_tkinter.pyd
+f650d6bc321bcda3fc3ac3dec3ac4e473fb0b7b68b6c948581bcfc54653e6768 *vendor/windows/python/DLLs/tcl86t.dll
+1a6d0871be2fa7153de22be008a20a5257b721657e6d4b24da8b1f940345d0d5 *vendor/windows/python/DLLs/tk86t.dll
+bc492b19308bc011cfcd321f1e6e65e6239d4eeb620cc02f7e9bf89002511d4a *vendor/windows/python/tcl/tcl8.6/init.tcl
+e1067a0668debb2d8e8ec3b7bc1aec3723627649832b20333f9369f28e4dfdbf *vendor/windows/python/tcl/tk8.6/tk.tcl
 642743b4750de17e655e6711601b077bc6598dbfa3ba5fa2b2a35ce12b508dff *vendor/windows/wheels/altgraph-0.17.4-py2.py3-none-any.whl
 da185cd2af68c08a6cd4481f7325ed600a88f6a813bad9dea07ab3ef73d8d8d6 *vendor/windows/wheels/pefile-2023.2.7-py3-none-any.whl
 5161eef006d335e46895297f642341111945e2c1c899eb406882a6c61a4357ab *vendor/windows/wheels/pillow-10.4.0-cp38-cp38-win_amd64.whl
